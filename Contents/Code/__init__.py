@@ -1,40 +1,85 @@
-CURRENT_PLUGIN_PREFIX   = "/video/current"
-CURRENT_ROOT            = "http://current.com"
-CURRENT_VIDEO_DIRECTORY = "http://current.com/items/"
+PREFIX   				= "/video/current"
+
+TITLE 					= 'Current TV'
+ART 					= 'art-default.png'
+ICON 					= 'icon-default.png'
+
+CURRENT_ROOT            	= "http://current.com"
+CURRENT_PLAYLIST_URL	= 'http://current.com/proxy/index.php/cccp/%s/items.htm?id=%s&sort=new&start=0&len=50&filter=allVeepableVideos&include=contentPageAsset%%2CcontentParentGroup%%2CgroupSkin%%2CfeaturedContent'
 
 ####################################################################################################
 def Start():
-	Plugin.AddPrefixHandler(CURRENT_PLUGIN_PREFIX, MainMenu, "Current TV", "icon-default.png", "art-default.png")
-	MediaContainer.art = R('art-default.png')
-	MediaContainer.title1 = 'Current TV'
-####################################################################################################
-def VideoDirectory(sender, url):
-	dir = MediaContainer(title2=sender.itemTitle)
-		
-	for video in HTML.ElementFromURL(url).xpath("//div[@class='itemListingAsset']"):
-		url = video.xpath('a')[0].get('href')
-		thumb = video.xpath('a/img')[0].get('src')
-		title = video.xpath('a')[0].get('title')
-		dir.Append(WebVideoItem(url, title=title, thumb=thumb))
-	return dir
+	Plugin.AddPrefixHandler(PREFIX, MainMenu, TITLE, ICON, ART)
+	Plugin.AddViewGroup('InfoList', viewMode = 'InfoList', mediaType = 'items')
+
+	ObjectContainer.view_group = 'InfoList'
+	ObjectContainer.title1 = TITLE
+	ObjectContainer.art = R(ART)
+
+	DirectoryObject.art = R(ART)
+	DirectoryObject.thumb = R(ICON)
+	VideoClipObject.art = R(ART)
+	VideoClipObject.thumb = R(ICON)
+
+	HTTP.CacheTime = CACHE_1HOUR
+	HTTP.Headers['X-Requested-With'] = "XMLHttpRequest"
 
 ####################################################################################################
-
 def MainMenu():
-	dir = MediaContainer()
-	dir.Append(Function(DirectoryItem(VideoDirectory,	title="Best Of Current TV", thumb=R("icon-default.png")), url="http://current.com/currenttv.htm"))
-#	dir.Append(Function(DirectoryItem(VideoDirectory, title="Currency", thumb=R("currency.png")), url="http://current.com/topics/76253832/currency/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Edge", thumb=R("currentedge.png")), url="http://current.com/topics/76254312/current_edge/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Fix", thumb=R("currentfix.png")), url="http://current.com/topics/76772252/current_fix/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Ride", thumb=R("currentride.png")), url="http://current.com/topics/76253932/current_ride/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Tech", thumb=R("currenttech.png")), url="http://current.com/topics/76253842/current_tech/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Question", thumb=R("currentquestion.png")), url="http://current.com/topics/76254442/current_question/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Current Virals", thumb=R("currentvirals.png")), url="http://current.com/topics/76254682/current_virals/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Daily Fix", thumb=R("dailyfix.png")), url="http://current.com/topics/76254722/daily_fix/default/0.htm"))
-#	dir.Append(Function(DirectoryItem(VideoDirectory, title="Infomania", thumb=R("infomania.png")), url="http://current.com/topics/76254712/infomania/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Joe Central", thumb=R("joe.png")), url="http://current.com/topics/86547961/joe_central/default/0.htm"))
-#	dir.Append(Function(DirectoryItem(VideoDirectory, title="Salon", thumb=R("salon.png")), url="http://current.com/topics/77314621/salon/default/0.htm"))
-#	dir.Append(Function(DirectoryItem(VideoDirectory, title="Supernews", thumb=R("supernews.png")), url="http://current.com/topics/76254232/supernews/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Vanguard Journalism", thumb=R("vanguard.png")), url="http://current.com/topics/501/vanguard_journalism/default/0.htm"))
-	dir.Append(Function(DirectoryItem(VideoDirectory, title="Viewer Uploads", thumb=R("uploads.png")), url="http://current.com/uploads.htm"))
-	return dir
+	oc = ObjectContainer()
+
+	oc.add(DirectoryObject(key = Callback(CurrentShows, title = 'Current Shows'), title = 'Current Shows'))
+	oc.add(DirectoryObject(key = Callback(ShortFilms, title = 'Short Films'), title = 'Short Films'))
+
+	return oc
+
+####################################################################################################
+def CurrentShows(title):
+	oc = ObjectContainer(title2 = title)
+
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'The Beat', id = '90004943', type = 'tag'), title = 'The Beat'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'The Burried Life', id = '90001176', type = 'tag'), title = 'The Burried Life'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Extreme Tourist', id = '90000647', type = 'tag'), title = 'Extreme Tourist'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Deadliest Journeys', id = '89832869', type = 'tag'), title = 'Deadliest Journeys'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'What Did I Do Last Night', id = '89952425', type = 'tag'), title = 'What Did I Do Last Night'))
+
+	return oc
+
+####################################################################################################
+def ShortFilms(title):
+	oc = ObjectContainer(title2 = title)
+
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Culture and Society', id = 'groups%2Fculture-and-society-docs', type = 'group'), title = 'Culture and Society'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Sex and Relationships', id = 'documentaries%2Fsex-and-relationships', type = 'group'), title = 'Sex and Relationships'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Environment', id = 'documentaries%2Fenvironment', type = 'group'), title = 'Environment'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Comedy', id = 'comedy', type = 'group'), title = 'Comedy'))
+	oc.add(DirectoryObject(key = Callback(PlaylistMenu, title = 'Sport', id = 'documentaries%2Fsport', type = 'group'), title = 'Sport'))
+
+	return oc
+
+####################################################################################################
+def PlaylistMenu(title, id, type):
+	oc = ObjectContainer(title2 = title)
+
+	playlist = JSON.ObjectFromURL(CURRENT_PLAYLIST_URL % (type, id))
+	for item in playlist['items']:
+		url = CURRENT_ROOT + item['url']
+		title = item['contentTitle']
+		summary = item['contentText']
+		date = Datetime.ParseDate(item['dateAdded'])
+		duration = int(item['pageAsset']['duration'])
+
+		thumb = item['pageAsset']['thumbUrl']
+		if thumb.endswith('.jpg') == False:
+			thumb = thumb + '_400x300.jpg'
+
+		oc.add(VideoClipObject(
+			url = url,
+			title = title,
+			summary = summary,
+			thumb = thumb,
+			duration = duration,
+			originally_available_at = date))
+
+	return oc
+
